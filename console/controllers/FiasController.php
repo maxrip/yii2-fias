@@ -3,6 +3,7 @@
 namespace ejen\fias\console\controllers;
 
 use Yii;
+use yii\helpers\FileHelper;
 
 use ejen\fias\common\models\FiasActstat;
 use ejen\fias\common\models\FiasAddrobj;
@@ -34,7 +35,26 @@ class FiasController extends \yii\console\Controller
             'region',
         ];
     }
-
+    
+    public function actionImportRegion($filename, int $region = 0)
+    {
+        if ($region) {
+            $dbfs = FileHelper::findFiles($filename,['only'=>['*'.$region.'.dbf','*'.$region.'.DBF']]);
+        } else {
+            $dbfs = FileHelper::findFiles($filename,['only'=>['*.dbf','*.DBF']]);
+        }
+        if (count($dbfs) == 0){
+            $this->stderr("Не удалось найти DBF файлы в каталоге: '$filename'\n");
+            return 1;
+        }
+        
+        $this->region = $region;
+        foreach ($dbfs as $dbf) {
+            $this->actionImportDbf($dbf);
+        }
+        return 0;
+    }
+    
     public function actionImportDbf($filename, $region = false)
     {
         $db = dbase_open($filename, 0);
